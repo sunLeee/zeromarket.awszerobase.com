@@ -1,0 +1,140 @@
+
+<!DOCTYPE html>
+<html>
+
+<head>
+    <meta charset="UTF-8">
+    <title>Zero Market</title>
+    <style type="text/css">
+        div.set {
+            display: grid;
+            grid-template-columns: max-content max-content;
+            grid-gap: 5px;
+            align-items: center;
+        }
+
+        div.set label {
+            text-align: right;
+        }
+
+        div.set th,
+        td {
+            padding: 10px 10px;
+            border: 1px solid;
+        }
+    </style>
+    <script>
+        var APIURL = ""
+        var registerOrder = (client_id, order, order_quantity, delivery_address) => {
+            var myHeaders = new Headers();
+            myHeaders.append("Content-Type", "application/json");
+            var raw = JSON.stringify({ "client_id": client_id, "order_list": { [order]: order_quantity }, "delivery": { "address": delivery_address } });
+            var requestOptions = {
+                method: "POST",
+                headers: myHeaders,
+                body: raw,
+                redirect: "follow"
+            };
+            fetch(APIURL, requestOptions)
+                .then(response => response.text())
+                .then(result => alert(JSON.parse(result).body))
+                .catch(error => console.log("error", error));
+        }
+
+        var queryOrder = (client_id_query) => {
+            if (!client_id_query) {
+                alert("Can not find orders.");
+            }
+            else {
+                var myHeaders = new Headers();
+                myHeaders.append("Content-Type", "application/json");
+                var requestOptions = {
+                    method: "GET",
+                    headers: myHeaders,
+                    redirect: "follow"
+                };
+                fetch(APIURL + "?" + new URLSearchParams({ client_id: client_id_query }))
+                    .then(response => response.text())
+                    .then(result => JSON.parse(result))
+                    .then(body => {
+                        if (body.length > 0) {
+                            createTable(body)
+                        }
+                        else {
+                            alert("Can not find orders.")
+                        }
+                    })
+                    .catch(error => console.log("error", error));
+            }
+        }
+
+        function createTable(orders) {
+            if (document.getElementById("query_table")) {
+                document.getElementById("query_table").remove();
+            }
+            var table = document.createElement("table");
+            table.setAttribute("id", "query_table");
+            var thead = document.createElement("thead");
+            var tbody = document.createElement("tbody");
+            table.appendChild(thead);
+            table.appendChild(tbody);
+            document.body.appendChild(table);
+
+            const keys = Object.keys(orders[0])
+
+            var row_head = document.createElement("tr");
+            keys.forEach(key => {
+                var head = document.createElement("th");
+                head.appendChild(document.createTextNode(JSON.stringify(key).replace(/^"(.*)"$/, "$1")));
+                row_head.appendChild(head)
+            })
+            thead.appendChild(row_head)
+
+            orders.forEach(order => {
+                var row = document.createElement("tr");
+                keys.forEach(key => {
+                    var cell = document.createElement("td");
+                    cell.appendChild(document.createTextNode(JSON.stringify(order[[key]]).replace(/^"(.*)"$/, "$1")));
+                    row.appendChild(cell);
+                })
+                tbody.appendChild(row);
+            });
+        }
+    </script>
+</head>
+
+<body>
+    <div class="set">
+        <h1>1. Register Order</h1>
+        <label></label>
+
+        <label>Client ID</label>
+        <input type="text" id="client_id" />
+
+        <label>Order</label>
+        <input type="text" id="order">
+
+        <label>Order Quantity</label>
+        <input type="text" id="order_quantity">
+
+        <label>Delivery Address</label>
+        <input type="text" id="delivery_address">
+
+        <label></label>
+        <button type="button"
+            onclick="registerOrder(document.getElementById('client_id').value,document.getElementById('order').value,document.getElementById('order_quantity').value,document.getElementById('delivery_address').value)">Register
+            Order</button>
+
+        <h1>2. Query Order</h1>
+        <label></label>
+
+        <label>Client ID</label>
+        <input type="text" id="client_id_query">
+
+        <label></label>
+        <button type="button" onclick="queryOrder(document.getElementById('client_id_query').value)">Query
+            Order</button>
+    </div>
+</body>
+
+</html>
